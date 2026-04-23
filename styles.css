@@ -1,0 +1,449 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Microsoft YaHei', 'SimHei', sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* 左侧目录栏 */
+.sidebar {
+  width: 280px;
+  background: rgba(30, 30, 50, 0.95);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-header {
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-header h2 {
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.btn-add-page {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-add-page:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.toc-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 0;
+}
+
+.toc-item {
+  padding: 12px 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: background 0.2s;
+  border-left: 3px solid transparent;
+}
+
+.toc-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.toc-item.active {
+  background: rgba(102, 126, 234, 0.2);
+  border-left-color: #667eea;
+}
+
+.toc-item-number {
+  width: 24px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.toc-item.active .toc-item-number {
+  background: #667eea;
+}
+
+.toc-item-title {
+  flex: 1;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.toc-item-delete {
+  opacity: 0;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: #ff6b6b;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s;
+}
+
+.toc-item:hover .toc-item-delete {
+  opacity: 1;
+}
+
+.toc-item-delete:hover {
+  background: rgba(255, 107, 107, 0.2);
+  border-radius: 4px;
+}
+
+/* 主内容区域 */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  overflow: hidden;
+}
+
+/* 工具栏 */
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  margin-bottom: 20px;
+  backdrop-filter: blur(10px);
+}
+
+.page-info {
+  color: white;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.nav-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-nav {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  color: #667eea;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.btn-nav:hover {
+  background: white;
+  transform: scale(1.05);
+}
+
+.btn-nav:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.save-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: white;
+  font-size: 14px;
+}
+
+.status-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #4ade80;
+  transition: background 0.3s;
+}
+
+.status-indicator.saving {
+  background: #fbbf24;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* 书籍容器 */
+.book-container {
+  flex: 1;
+  display: flex;
+  gap: 0;
+  perspective: 2000px;
+  min-height: 0;
+}
+
+/* 页面样式 */
+.page {
+  flex: 1;
+  background: #fffef7;
+  box-shadow: 
+    0 10px 40px rgba(0, 0, 0, 0.3),
+    inset -30px 0 60px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+.left-page {
+  border-radius: 8px 0 0 8px;
+  box-shadow: 
+    0 10px 40px rgba(0, 0, 0, 0.3),
+    inset -40px 0 80px rgba(0, 0, 0, 0.08),
+    3px 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.right-page {
+  border-radius: 0 8px 8px 0;
+  box-shadow: 
+    0 10px 40px rgba(0, 0, 0, 0.3),
+    inset 40px 0 80px rgba(0, 0, 0, 0.08),
+    -3px 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* 书籍中间缝隙 */
+.book-spine {
+  width: 8px;
+  background: linear-gradient(to right, #d4c8b8, #a89888, #d4c8b8);
+  box-shadow: 
+    inset 2px 0 8px rgba(0, 0, 0, 0.3),
+    inset -2px 0 8px rgba(0, 0, 0, 0.3);
+  position: relative;
+  z-index: 10;
+}
+
+/* 页面头部 */
+.page-header {
+  padding: 25px 30px 15px;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.05);
+}
+
+.left-page .page-header {
+  display: flex;
+  align-items: center;
+}
+
+.right-page .page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.page-title-input {
+  font-size: 20px;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: #333;
+  outline: none;
+  flex: 1;
+  font-family: inherit;
+}
+
+.page-title-input::placeholder {
+  color: #aaa;
+}
+
+.page-date-input {
+  font-size: 14px;
+  border: none;
+  background: transparent;
+  color: #666;
+  outline: none;
+  text-align: right;
+  font-family: inherit;
+}
+
+.page-date-input::placeholder {
+  color: #aaa;
+}
+
+/* 页面内容 */
+.page-content {
+  flex: 1;
+  padding: 20px 30px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* 编辑器样式 */
+.editor {
+  min-height: 100%;
+  outline: none;
+  font-size: 16px;
+  line-height: 2;
+  color: #333;
+  font-family: inherit;
+}
+
+.editor:empty:before {
+  content: attr(placeholder);
+  color: #aaa;
+}
+
+/* 康奈尔笔记样式 */
+.cornell-container {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.cornell-section {
+  display: flex;
+  flex-direction: column;
+  padding: 15px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  margin: 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.section-label {
+  font-size: 12px;
+  color: #888;
+  font-weight: 500;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-bottom: 1px dashed rgba(0, 0, 0, 0.1);
+  padding-bottom: 5px;
+}
+
+.cues-section {
+  width: 35%;
+  min-height: 200px;
+}
+
+.notes-section {
+  flex: 1;
+  min-height: 200px;
+}
+
+.summary-section {
+  margin: 5px;
+  min-height: 100px;
+}
+
+.cornell-editor {
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.8;
+  overflow-y: auto;
+  min-height: 50px;
+}
+
+/* 页面底部 */
+.page-footer {
+  padding: 15px 30px;
+  border-top: 2px solid rgba(0, 0, 0, 0.05);
+  display: flex;
+  justify-content: center;
+}
+
+.page-number {
+  font-size: 14px;
+  color: #999;
+  font-style: italic;
+}
+
+/* 装饰性页边效果 */
+.page::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 60px;
+  pointer-events: none;
+}
+
+.left-page::before {
+  right: 0;
+  background: linear-gradient(to left, rgba(0, 0, 0, 0.02), transparent);
+}
+
+.right-page::before {
+  left: 0;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.02), transparent);
+}
+
+/* 滚动条样式 */
+.toc-list::-webkit-scrollbar,
+.editor::-webkit-scrollbar,
+.page-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.toc-list::-webkit-scrollbar-track,
+.editor::-webkit-scrollbar-track,
+.page-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.toc-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.editor::-webkit-scrollbar-thumb,
+.page-content::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+
+.toc-list::-webkit-scrollbar-thumb:hover,
+.editor::-webkit-scrollbar-thumb:hover,
+.page-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}

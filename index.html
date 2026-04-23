@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>读书笔记编辑器</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- 左侧目录栏 -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h2>📚 目录</h2>
+        <button class="btn-add-page" id="addPageBtn" title="添加新页面">+</button>
+      </div>
+      <div class="toc-list" id="tocList">
+        <!-- 目录项将动态生成 -->
+      </div>
+    </div>
+
+    <!-- 主内容区域 - 书籍 -->
+    <div class="main-content">
+      <!-- 顶部工具栏 -->
+      <div class="toolbar">
+        <div class="page-info">
+          <span id="currentPageDisplay">第 1 页</span>
+        </div>
+        <div class="nav-buttons">
+          <button class="btn-nav" id="prevPageBtn" title="上一页">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M15 18l-6-6 6-6"/>
+            </svg>
+          </button>
+          <button class="btn-nav" id="nextPageBtn" title="下一页">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 18l6-6-6-6"/>
+            </svg>
+          </button>
+        </div>
+        <div class="save-status" id="saveStatus">
+          <span class="status-indicator" id="statusIndicator"></span>
+          <span id="statusText">已保存</span>
+        </div>
+      </div>
+
+      <!-- 书籍容器 -->
+      <div class="book-container" id="bookContainer">
+        <!-- 左页 - 常规编辑 -->
+        <div class="page left-page" id="leftPage">
+          <div class="page-header">
+            <input type="text" class="page-title-input" id="leftPageTitle" placeholder="输入本页标题...">
+          </div>
+          <div class="page-content">
+            <div class="editor" id="leftEditor" contenteditable="true" placeholder="在此输入笔记内容..."></div>
+          </div>
+          <div class="page-footer">
+            <span class="page-number" id="leftPageNumber">-</span>
+          </div>
+        </div>
+
+        <!-- 书籍中间缝隙 -->
+        <div class="book-spine"></div>
+
+        <!-- 右页 - 康奈尔笔记 -->
+        <div class="page right-page" id="rightPage">
+          <div class="page-header">
+            <input type="text" class="page-title-input" id="cornellTitle" placeholder="课程/主题名称">
+            <input type="text" class="page-date-input" id="cornellDate" placeholder="日期">
+          </div>
+          
+          <!-- 康奈尔笔记区域 -->
+          <div class="cornell-container">
+            <!-- 线索/问题区 -->
+            <div class="cornell-section cues-section">
+              <div class="section-label">线索 / 问题</div>
+              <div class="editor cornell-editor" id="cuesEditor" contenteditable="true" placeholder="记录关键问题、线索、要点..."></div>
+            </div>
+            
+            <!-- 笔记记录区 -->
+            <div class="cornell-section notes-section">
+              <div class="section-label">笔记记录</div>
+              <div class="editor cornell-editor" id="notesEditor" contenteditable="true" placeholder="详细记录笔记内容..."></div>
+            </div>
+          </div>
+          
+          <!-- 总结区 -->
+          <div class="cornell-section summary-section">
+            <div class="section-label">总结</div>
+            <div class="editor cornell-editor" id="summaryEditor" contenteditable="true" placeholder="用自己的话总结本页内容..."></div>
+          </div>
+
+          <div class="page-footer">
+            <span class="page-number" id="rightPageNumber">-</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
