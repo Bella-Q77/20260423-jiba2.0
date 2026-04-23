@@ -3,11 +3,215 @@ const isElectron = () => {
 };
 
 let ipcRenderer = null;
+let marked = null;
+
 if (isElectron()) {
   try {
     ipcRenderer = require('electron').ipcRenderer;
   } catch (e) {
     ipcRenderer = null;
+  }
+  try {
+    marked = require('marked');
+    if (marked && marked.marked) {
+      marked = marked.marked;
+    }
+  } catch (e) {
+    console.warn('Marked 库未加载，Markdown 功能可能受限');
+    marked = null;
+  }
+} else {
+  marked = null;
+}
+
+class RichTextEditor {
+  constructor(editorId) {
+    this.editor = document.getElementById(editorId);
+    this.editorId = editorId;
+    this.isMarkdownMode = false;
+    this.markdownSource = '';
+    this.setupToolbar();
+  }
+
+  setupToolbar() {
+    const toolbar = this.editor.previousElementSibling;
+    if (!toolbar || !toolbar.classList.contains('editor-toolbar')) {
+      return;
+    }
+
+    const fontSelect = toolbar.querySelector('.font-size-select');
+    if (fontSelect) {
+      fontSelect.addEventListener('change', (e) => {
+        this.executeCommand('fontSize', e.target.value);
+      });
+    }
+
+    const commandButtons = toolbar.querySelectorAll('[data-command]');
+    commandButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const command = btn.getAttribute('data-command');
+        const colorPicker = btn.querySelector('.color-picker');
+        if (colorPicker) {
+          this.executeCommand(command, colorPicker.value);
+        } else {
+          this.executeCommand(command);
+        }
+        this.updateToolbarState();
+      });
+    });
+
+    const colorPickers = toolbar.querySelectorAll('.color-picker');
+    colorPickers.forEach(picker => {
+      picker.addEventListener('input', (e) => {
+        const command = picker.getAttribute('data-command');
+        this.executeCommand(command, e.target.value);
+      });
+    });
+
+    const markdownBtn = toolbar.querySelector('[data-action="toggleMarkdown"]');
+    if (markdownBtn) {
+      markdownBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.toggleMarkdownMode();
+      });
+    }
+  }
+
+  executeCommand(command, value = null) {
+    if (this.isMarkdownMode) {
+      return;
+    }
+    
+    this.editor.focus();
+    
+    if (command === 'fontSize') {
+      document.execCommand('fontSize', false, value);
+    } else if (command === 'foreColor') {
+      document.execCommand('foreColor', false, value);
+    } else if (command === 'backColor') {
+      document.execCommand('hiliteColor', false, value);
+    } else {
+      document.execCommand(command, false, value);
+    }
+    
+    this.editor.focus();
+  }
+
+  updateToolbarState() {
+    const toolbar = this.editor.previousElementSibling;
+    if (!toolbar) return;
+
+    const boldBtn = toolbar.querySelector('[data-command="bold"]');
+    const italicBtn = toolbar.querySelector('[data-command="italic"]');
+    const underlineBtn = toolbar.querySelector('[data-command="underline"]');
+
+    if (boldBtn) {
+      boldBtn.classList.toggle('active', document.queryCommandState('bold'));
+    }
+    if (italicBtn) {
+      italicBtn.classList.toggle('active', document.queryCommandState('italic'));
+    }
+    if (underlineBtn) {
+      underlineBtn.classList.toggle('active', document.queryCommandState('underline'));
+    }
+  }
+
+  toggleMarkdownMode() {
+    const toolbar = this.editor.previousElementSibling;
+    const markdownBtn = toolbar?.querySelector('[data-action="toggleMarkdown"]');
+    
+    if (!marked) {
+      alert('Markdown 功能需要安装依赖。请先运行: npm install');
+      return;
+    }
+
+    if (this.isMarkdownMode) {
+      this.editor.contentEditable = 'true';
+      this.editor.innerHTML = this.markdownSource;
+      this.isMarkdownMode = false;
+      if (markdownBtn) markdownBtn.classList.remove('active');
+      
+      const toolbarControls = toolbar?.querySelectorAll('.font-size-select, .toolbar-btn:not(.markdown-btn), .color-picker-wrapper');
+      toolbarControls?.forEach(ctrl => {
+        ctrl.style.display = '';
+      });
+    } else {
+      this.markdownSource = this.editor.innerHTML;
+      const plainText = this.htmlToMarkdown(this.markdownSource);
+      
+      try {
+        const renderedHtml = marked(plainText);
+        this.editor.innerHTML = renderedHtml;
+        this.editor.contentEditable = 'false';
+        this.isMarkdownMode = true;
+        if (markdownBtn) markdownBtn.classList.add('active');
+        
+        const toolbarControls = toolbar?.querySelectorAll('.font-size-select, .toolbar-btn:not(.markdown-btn), .color-picker-wrapper');
+        toolbarControls?.forEach(ctrl => {
+          ctrl.style.display = 'none';
+        });
+      } catch (e) {
+        console.error('Markdown 渲染失败:', e);
+        alert('Markdown 渲染失败: ' + e.message);
+      }
+    }
+  }
+
+  htmlToMarkdown(html) {
+    let text = html;
+    
+    text = text.replace(/<br\s*\/?>/gi, '\n');
+    text = text.replace(/<p[^>]*>/gi, '\n');
+    text = text.replace(/<\/p>/gi, '');
+    text = text.replace(/<strong[^>]*>(.*?)<\/strong>/gi, '**$1**');
+    text = text.replace(/<b[^>]*>(.*?)<\/b>/gi, '**$1**');
+    text = text.replace(/<em[^>]*>(.*?)<\/em>/gi, '*$1*');
+    text = text.replace(/<i[^>]*>(.*?)<\/i>/gi, '*$1*');
+    text = text.replace(/<u[^>]*>(.*?)<\/u>/gi, '__$1__');
+    text = text.replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n');
+    text = text.replace(/<h2[^>]*>(.*?)<\/h2>/gi, '## $1\n');
+    text = text.replace(/<h3[^>]*>(.*?)<\/h3>/gi, '### $1\n');
+    text = text.replace(/<h4[^>]*>(.*?)<\/h4>/gi, '#### $1\n');
+    text = text.replace(/<h5[^>]*>(.*?)<\/h5>/gi, '##### $1\n');
+    text = text.replace(/<h6[^>]*>(.*?)<\/h6>/gi, '###### $1\n');
+    text = text.replace(/<li[^>]*>(.*?)<\/li>/gi, '- $1\n');
+    text = text.replace(/<ul[^>]*>/gi, '');
+    text = text.replace(/<\/ul>/gi, '');
+    text = text.replace(/<ol[^>]*>/gi, '');
+    text = text.replace(/<\/ol>/gi, '');
+    text = text.replace(/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi, '[$2]($1)');
+    text = text.replace(/<img[^>]*src="([^"]*)"[^>]*alt="([^"]*)"[^>]*>/gi, '![$2]($1)');
+    text = text.replace(/<[^>]+>/g, '');
+    text = text.replace(/&nbsp;/g, ' ');
+    text = text.replace(/&lt;/g, '<');
+    text = text.replace(/&gt;/g, '>');
+    text = text.replace(/&amp;/g, '&');
+    text = text.replace(/\n{3,}/g, '\n\n');
+    
+    return text.trim();
+  }
+
+  getContent() {
+    if (this.isMarkdownMode) {
+      return this.markdownSource;
+    }
+    return this.editor.innerHTML;
+  }
+
+  setContent(content) {
+    this.markdownSource = '';
+    this.isMarkdownMode = false;
+    this.editor.innerHTML = content || '';
+    
+    const toolbar = this.editor.previousElementSibling;
+    const markdownBtn = toolbar?.querySelector('[data-action="toggleMarkdown"]');
+    if (markdownBtn) markdownBtn.classList.remove('active');
+    
+    const toolbarControls = toolbar?.querySelectorAll('.font-size-select, .toolbar-btn:not(.markdown-btn), .color-picker-wrapper');
+    toolbarControls?.forEach(ctrl => {
+      ctrl.style.display = '';
+    });
   }
 }
 
@@ -17,14 +221,58 @@ class NoteBookApp {
     this.currentPageIndex = 0;
     this.saveTimeout = null;
     this.isSaving = false;
+    this.editors = {};
     this.init();
   }
 
   init() {
+    this.initEditors();
     this.loadData();
     this.setupEventListeners();
     this.setupAutoSave();
     this.setupDatePicker();
+    this.setupKeyboardShortcuts();
+  }
+
+  initEditors() {
+    this.editors = {
+      leftEditor: new RichTextEditor('leftEditor'),
+      cuesEditor: new RichTextEditor('cuesEditor'),
+      notesEditor: new RichTextEditor('notesEditor'),
+      summaryEditor: new RichTextEditor('summaryEditor')
+    };
+  }
+
+  setupKeyboardShortcuts() {
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        const activeElement = document.activeElement;
+        if (!activeElement || !activeElement.classList.contains('editor')) {
+          return;
+        }
+
+        const editorId = activeElement.id;
+        const editor = this.editors[editorId];
+        
+        if (!editor || editor.isMarkdownMode) {
+          return;
+        }
+
+        if (e.key === 'b' || e.key === 'B') {
+          e.preventDefault();
+          editor.executeCommand('bold');
+          editor.updateToolbarState();
+        } else if (e.key === 'i' || e.key === 'I') {
+          e.preventDefault();
+          editor.executeCommand('italic');
+          editor.updateToolbarState();
+        } else if (e.key === 'u' || e.key === 'U') {
+          e.preventDefault();
+          editor.executeCommand('underline');
+          editor.updateToolbarState();
+        }
+      }
+    });
   }
 
   loadData() {
@@ -280,12 +528,12 @@ class NoteBookApp {
     
     currentPage.title = document.getElementById('leftPageTitle').value || 
                         ('第 ' + (this.currentPageIndex + 1) + ' 页');
-    currentPage.leftContent = document.getElementById('leftEditor').innerHTML;
+    currentPage.leftContent = this.editors.leftEditor.getContent();
     currentPage.cornell.title = document.getElementById('cornellTitle').value;
     currentPage.cornell.date = document.getElementById('cornellDate').value;
-    currentPage.cornell.cues = document.getElementById('cuesEditor').innerHTML;
-    currentPage.cornell.notes = document.getElementById('notesEditor').innerHTML;
-    currentPage.cornell.summary = document.getElementById('summaryEditor').innerHTML;
+    currentPage.cornell.cues = this.editors.cuesEditor.getContent();
+    currentPage.cornell.notes = this.editors.notesEditor.getContent();
+    currentPage.cornell.summary = this.editors.summaryEditor.getContent();
   }
 
   renderCurrentPage() {
@@ -294,12 +542,12 @@ class NoteBookApp {
     const page = this.pages[this.currentPageIndex];
     
     document.getElementById('leftPageTitle').value = page.title;
-    document.getElementById('leftEditor').innerHTML = page.leftContent || '';
+    this.editors.leftEditor.setContent(page.leftContent || '');
     document.getElementById('cornellTitle').value = page.cornell.title || '';
     document.getElementById('cornellDate').value = page.cornell.date || '';
-    document.getElementById('cuesEditor').innerHTML = page.cornell.cues || '';
-    document.getElementById('notesEditor').innerHTML = page.cornell.notes || '';
-    document.getElementById('summaryEditor').innerHTML = page.cornell.summary || '';
+    this.editors.cuesEditor.setContent(page.cornell.cues || '');
+    this.editors.notesEditor.setContent(page.cornell.notes || '');
+    this.editors.summaryEditor.setContent(page.cornell.summary || '');
     
     document.getElementById('currentPageDisplay').textContent = 
       '第 ' + (this.currentPageIndex + 1) + ' 页 / 共 ' + this.pages.length + ' 页';
