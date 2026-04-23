@@ -26,6 +26,36 @@
         <div class="page-info">
           <span id="currentPageDisplay">第 1 页</span>
         </div>
+        
+        <!-- 富文本编辑工具栏（全局统一） -->
+        <div class="format-toolbar" id="formatToolbar">
+          <select class="font-size-select" id="fontSizeSelect" title="字体大小">
+            <option value="1">10px</option>
+            <option value="2">13px</option>
+            <option value="3" selected>16px</option>
+            <option value="4">18px</option>
+            <option value="5">24px</option>
+            <option value="6">32px</option>
+            <option value="7">48px</option>
+          </select>
+          <button class="toolbar-btn bold-btn" id="boldBtn" data-command="bold" title="加粗 (Ctrl+B)">B</button>
+          <button class="toolbar-btn italic-btn" id="italicBtn" data-command="italic" title="斜体 (Ctrl+I)">I</button>
+          <button class="toolbar-btn underline-btn" id="underlineBtn" data-command="underline" title="下划线 (Ctrl+U)">U</button>
+          <div class="color-picker-wrapper">
+            <label class="color-label" id="textColorLabel" title="文字颜色">A</label>
+            <input type="color" class="color-picker" id="textColorPicker" data-command="foreColor" value="#000000" title="选择文字颜色">
+          </div>
+          <div class="color-picker-wrapper">
+            <label class="bg-color-label" id="bgColorLabel" title="背景颜色">A</label>
+            <input type="color" class="color-picker" id="bgColorPicker" data-command="backColor" value="#ffffff" title="选择背景颜色">
+          </div>
+          <div class="toolbar-divider"></div>
+          <label class="markdown-mode-label">
+            <input type="checkbox" id="markdownModeToggle">
+            <span>Markdown 预览</span>
+          </label>
+        </div>
+        
         <div class="nav-buttons">
           <button class="btn-nav" id="prevPageBtn" title="上一页">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -52,29 +82,6 @@
             <input type="text" class="page-title-input" id="leftPageTitle" placeholder="输入本页标题...">
           </div>
           <div class="page-content">
-            <div class="editor-toolbar" data-editor="leftEditor">
-              <select class="font-size-select" title="字体大小">
-                <option value="1">10px</option>
-                <option value="2">13px</option>
-                <option value="3" selected>16px</option>
-                <option value="4">18px</option>
-                <option value="5">24px</option>
-                <option value="6">32px</option>
-                <option value="7">48px</option>
-              </select>
-              <button class="toolbar-btn bold-btn" data-command="bold" title="加粗 (Ctrl+B)">B</button>
-              <button class="toolbar-btn italic-btn" data-command="italic" title="斜体 (Ctrl+I)">I</button>
-              <button class="toolbar-btn underline-btn" data-command="underline" title="下划线 (Ctrl+U)">U</button>
-              <div class="color-picker-wrapper">
-                <label class="color-label" title="文字颜色">A</label>
-                <input type="color" class="color-picker" data-command="foreColor" value="#000000" title="选择文字颜色">
-              </div>
-              <div class="color-picker-wrapper">
-                <label class="bg-color-label" title="背景颜色">A</label>
-                <input type="color" class="color-picker" data-command="backColor" value="#ffffff" title="选择背景颜色">
-              </div>
-              <button class="toolbar-btn markdown-btn" data-action="toggleMarkdown" title="切换 Markdown 模式">MD</button>
-            </div>
             <div class="editor" id="leftEditor" contenteditable="true" placeholder="在此输入笔记内容..."></div>
           </div>
           <div class="page-footer">
@@ -97,54 +104,12 @@
             <!-- 线索/问题区 -->
             <div class="cornell-section cues-section">
               <div class="section-label">线索 / 问题</div>
-              <div class="editor-toolbar cornell-toolbar" data-editor="cuesEditor">
-                <select class="font-size-select" title="字体大小">
-                  <option value="1">10px</option>
-                  <option value="2">13px</option>
-                  <option value="3" selected>16px</option>
-                  <option value="4">18px</option>
-                  <option value="5">24px</option>
-                </select>
-                <button class="toolbar-btn bold-btn" data-command="bold" title="加粗">B</button>
-                <button class="toolbar-btn italic-btn" data-command="italic" title="斜体">I</button>
-                <button class="toolbar-btn underline-btn" data-command="underline" title="下划线">U</button>
-                <div class="color-picker-wrapper">
-                  <label class="color-label" title="文字颜色">A</label>
-                  <input type="color" class="color-picker" data-command="foreColor" value="#000000" title="选择文字颜色">
-                </div>
-                <div class="color-picker-wrapper">
-                  <label class="bg-color-label" title="背景颜色">A</label>
-                  <input type="color" class="color-picker" data-command="backColor" value="#ffffff" title="选择背景颜色">
-                </div>
-                <button class="toolbar-btn markdown-btn" data-action="toggleMarkdown" title="切换 Markdown 模式">MD</button>
-              </div>
               <div class="editor cornell-editor" id="cuesEditor" contenteditable="true" placeholder="记录关键问题、线索、要点..."></div>
             </div>
             
             <!-- 笔记记录区 -->
             <div class="cornell-section notes-section">
               <div class="section-label">笔记记录</div>
-              <div class="editor-toolbar cornell-toolbar" data-editor="notesEditor">
-                <select class="font-size-select" title="字体大小">
-                  <option value="1">10px</option>
-                  <option value="2">13px</option>
-                  <option value="3" selected>16px</option>
-                  <option value="4">18px</option>
-                  <option value="5">24px</option>
-                </select>
-                <button class="toolbar-btn bold-btn" data-command="bold" title="加粗">B</button>
-                <button class="toolbar-btn italic-btn" data-command="italic" title="斜体">I</button>
-                <button class="toolbar-btn underline-btn" data-command="underline" title="下划线">U</button>
-                <div class="color-picker-wrapper">
-                  <label class="color-label" title="文字颜色">A</label>
-                  <input type="color" class="color-picker" data-command="foreColor" value="#000000" title="选择文字颜色">
-                </div>
-                <div class="color-picker-wrapper">
-                  <label class="bg-color-label" title="背景颜色">A</label>
-                  <input type="color" class="color-picker" data-command="backColor" value="#ffffff" title="选择背景颜色">
-                </div>
-                <button class="toolbar-btn markdown-btn" data-action="toggleMarkdown" title="切换 Markdown 模式">MD</button>
-              </div>
               <div class="editor cornell-editor" id="notesEditor" contenteditable="true" placeholder="详细记录笔记内容..."></div>
             </div>
           </div>
@@ -152,27 +117,6 @@
           <!-- 总结区 -->
           <div class="cornell-section summary-section">
             <div class="section-label">总结</div>
-            <div class="editor-toolbar cornell-toolbar" data-editor="summaryEditor">
-              <select class="font-size-select" title="字体大小">
-                <option value="1">10px</option>
-                <option value="2">13px</option>
-                <option value="3" selected>16px</option>
-                <option value="4">18px</option>
-                <option value="5">24px</option>
-              </select>
-              <button class="toolbar-btn bold-btn" data-command="bold" title="加粗">B</button>
-              <button class="toolbar-btn italic-btn" data-command="italic" title="斜体">I</button>
-              <button class="toolbar-btn underline-btn" data-command="underline" title="下划线">U</button>
-              <div class="color-picker-wrapper">
-                <label class="color-label" title="文字颜色">A</label>
-                <input type="color" class="color-picker" data-command="foreColor" value="#000000" title="选择文字颜色">
-              </div>
-              <div class="color-picker-wrapper">
-                <label class="bg-color-label" title="背景颜色">A</label>
-                <input type="color" class="color-picker" data-command="backColor" value="#ffffff" title="选择背景颜色">
-              </div>
-              <button class="toolbar-btn markdown-btn" data-action="toggleMarkdown" title="切换 Markdown 模式">MD</button>
-            </div>
             <div class="editor cornell-editor" id="summaryEditor" contenteditable="true" placeholder="用自己的话总结本页内容..."></div>
           </div>
 
