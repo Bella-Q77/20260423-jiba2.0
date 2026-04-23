@@ -152,6 +152,20 @@ body {
   border-radius: 10px;
   margin-bottom: 20px;
   backdrop-filter: blur(10px);
+  gap: 15px;
+}
+
+/* 格式工具栏（全局统一） */
+.format-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  flex: 1;
+  justify-content: center;
 }
 
 .page-info {
@@ -401,9 +415,27 @@ body {
   color: #667eea;
 }
 
-.markdown-btn.active {
-  background: #667eea;
-  color: white;
+.toolbar-divider {
+  width: 1px;
+  height: 24px;
+  background: rgba(0, 0, 0, 0.2);
+  margin: 0 8px;
+}
+
+.markdown-mode-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #333;
+  user-select: none;
+}
+
+.markdown-mode-label input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
 }
 
 .color-picker-wrapper {
@@ -430,24 +462,13 @@ body {
 
 .color-label {
   text-decoration: underline;
-  text-decoration-color: #000;
   text-decoration-thickness: 3px;
+  color: #000;
 }
 
 .bg-color-label {
-  background: #fff;
   position: relative;
-}
-
-.bg-color-label::after {
-  content: '';
-  position: absolute;
-  bottom: 4px;
-  left: 4px;
-  right: 4px;
-  height: 4px;
-  background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.2);
+  background-color: #fff;
 }
 
 .color-picker {

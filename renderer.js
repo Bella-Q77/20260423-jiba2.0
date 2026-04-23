@@ -24,87 +24,213 @@ if (isElectron()) {
   marked = null;
 }
 
-class RichTextEditor {
-  constructor(editorId) {
-    this.editor = document.getElementById(editorId);
-    this.editorId = editorId;
-    this.isMarkdownMode = false;
-    this.markdownSource = '';
-    this.setupToolbar();
+class EditorManager {
+  constructor() {
+    this.editors = {
+      leftEditor: {
+        element: null,
+        isMarkdownMode: false,
+        markdownSource: '',
+        lastHtmlContent: ''
+      },
+      cuesEditor: {
+        element: null,
+        isMarkdownMode: false,
+        markdownSource: '',
+        lastHtmlContent: ''
+      },
+      notesEditor: {
+        element: null,
+        isMarkdownMode: false,
+        markdownSource: '',
+        lastHtmlContent: ''
+      },
+      summaryEditor: {
+        element: null,
+        isMarkdownMode: false,
+        markdownSource: '',
+        lastHtmlContent: ''
+      }
+    };
+    this.activeEditorId = null;
+    this.globalMarkdownMode = false;
+    this.init();
   }
 
-  setupToolbar() {
-    const toolbar = this.editor.previousElementSibling;
-    if (!toolbar || !toolbar.classList.contains('editor-toolbar')) {
+  init() {
+    Object.keys(this.editors).forEach(editorId => {
+      const element = document.getElementById(editorId);
+      if (element) {
+        this.editors[editorId].element = element;
+        this.setupEditorEvents(editorId);
+      }
+    });
+    this.setupGlobalMarkdownToggle();
+  }
+
+  setupEditorEvents(editorId) {
+    const editor = this.editors[editorId].element;
+    
+    editor.addEventListener('focus', () => {
+      this.activeEditorId = editorId;
+    });
+
+    editor.addEventListener('click', () => {
+      this.activeEditorId = editorId;
+    });
+
+    editor.addEventListener('keydown', (e) => {
+      this.activeEditorId = editorId;
+    });
+  }
+
+  setupGlobalMarkdownToggle() {
+    const markdownToggle = document.getElementById('markdownModeToggle');
+    if (markdownToggle) {
+      markdownToggle.addEventListener('change', (e) => {
+        this.globalMarkdownMode = e.target.checked;
+        this.updateAllEditorsMarkdownMode();
+      });
+    }
+  }
+
+  updateAllEditorsMarkdownMode() {
+    Object.keys(this.editors).forEach(editorId => {
+      const editor = this.editors[editorId];
+      if (this.globalMarkdownMode) {
+        this.enterMarkdownMode(editorId);
+      } else {
+        this.exitMarkdownMode(editorId);
+      }
+    });
+  }
+
+  enterMarkdownMode(editorId) {
+    const editor = this.editors[editorId];
+    if (!editor.element || editor.isMarkdownMode) return;
+
+    if (!marked) {
+      alert('Markdown 功能需要安装依赖。请先运行: npm install');
+      const markdownToggle = document.getElementById('markdownModeToggle');
+      if (markdownToggle) {
+        markdownToggle.checked = false;
+      }
+      this.globalMarkdownMode = false;
       return;
     }
 
-    const fontSelect = toolbar.querySelector('.font-size-select');
-    if (fontSelect) {
-      fontSelect.addEventListener('change', (e) => {
-        this.executeCommand('fontSize', e.target.value);
-      });
+    editor.markdownSource = this.getPlainText(editor.element);
+    editor.lastHtmlContent = editor.element.innerHTML;
+
+    try {
+      const renderedHtml = marked(editor.markdownSource);
+      editor.element.innerHTML = renderedHtml;
+      editor.element.contentEditable = 'false';
+      editor.isMarkdownMode = true;
+    } catch (e) {
+      console.error('Markdown 渲染失败:', e);
     }
+  }
 
-    const commandButtons = toolbar.querySelectorAll('[data-command]');
-    commandButtons.forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        const command = btn.getAttribute('data-command');
-        const colorPicker = btn.querySelector('.color-picker');
-        if (colorPicker) {
-          this.executeCommand(command, colorPicker.value);
-        } else {
-          this.executeCommand(command);
-        }
-        this.updateToolbarState();
-      });
-    });
+  exitMarkdownMode(editorId) {
+    const editor = this.editors[editorId];
+    if (!editor.element || !editor.isMarkdownMode) return;
 
-    const colorPickers = toolbar.querySelectorAll('.color-picker');
-    colorPickers.forEach(picker => {
-      picker.addEventListener('input', (e) => {
-        const command = picker.getAttribute('data-command');
-        this.executeCommand(command, e.target.value);
-      });
-    });
-
-    const markdownBtn = toolbar.querySelector('[data-action="toggleMarkdown"]');
-    if (markdownBtn) {
-      markdownBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        this.toggleMarkdownMode();
-      });
+    if (editor.lastHtmlContent) {
+      editor.element.innerHTML = editor.lastHtmlContent;
+    } else {
+      editor.element.innerHTML = editor.markdownSource
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\n/g, '<br>');
     }
+    editor.element.contentEditable = 'true';
+    editor.isMarkdownMode = false;
+  }
+
+  getPlainText(element) {
+    let text = element.innerText || element.textContent || '';
+    const html = element.innerHTML;
+    
+    if (html.includes('<br') || html.includes('<p') || html.includes('<div')) {
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = html;
+      text = tempDiv.innerText || tempDiv.textContent || '';
+    }
+    
+    return text;
+  }
+
+  getActiveEditor() {
+    if (!this.activeEditorId) return null;
+    return this.editors[this.activeEditorId];
+  }
+
+  getContent(editorId) {
+    const editor = this.editors[editorId];
+    if (!editor.element) return '';
+    
+    if (editor.isMarkdownMode) {
+      return editor.markdownSource;
+    }
+    return editor.element.innerHTML;
+  }
+
+  setContent(editorId, content) {
+    const editor = this.editors[editorId];
+    if (!editor.element) return;
+
+    editor.isMarkdownMode = false;
+    editor.markdownSource = '';
+    editor.lastHtmlContent = content || '';
+    editor.element.innerHTML = content || '';
+    editor.element.contentEditable = 'true';
   }
 
   executeCommand(command, value = null) {
-    if (this.isMarkdownMode) {
+    const activeEditor = this.getActiveEditor();
+    if (!activeEditor || !activeEditor.element || activeEditor.isMarkdownMode) {
       return;
     }
-    
-    this.editor.focus();
+
+    activeEditor.element.focus();
     
     if (command === 'fontSize') {
       document.execCommand('fontSize', false, value);
     } else if (command === 'foreColor') {
       document.execCommand('foreColor', false, value);
+      this.updateTextColorLabel(value);
     } else if (command === 'backColor') {
       document.execCommand('hiliteColor', false, value);
+      this.updateBgColorLabel(value);
     } else {
       document.execCommand(command, false, value);
     }
     
-    this.editor.focus();
+    activeEditor.element.focus();
+    this.updateToolbarState();
+  }
+
+  updateTextColorLabel(color) {
+    const label = document.getElementById('textColorLabel');
+    if (label) {
+      label.style.color = color;
+      label.style.textDecorationColor = color;
+    }
+  }
+
+  updateBgColorLabel(color) {
+    const label = document.getElementById('bgColorLabel');
+    if (label) {
+      label.style.backgroundColor = color;
+    }
   }
 
   updateToolbarState() {
-    const toolbar = this.editor.previousElementSibling;
-    if (!toolbar) return;
-
-    const boldBtn = toolbar.querySelector('[data-command="bold"]');
-    const italicBtn = toolbar.querySelector('[data-command="italic"]');
-    const underlineBtn = toolbar.querySelector('[data-command="underline"]');
+    const boldBtn = document.getElementById('boldBtn');
+    const italicBtn = document.getElementById('italicBtn');
+    const underlineBtn = document.getElementById('underlineBtn');
 
     if (boldBtn) {
       boldBtn.classList.toggle('active', document.queryCommandState('bold'));
@@ -116,131 +242,61 @@ class RichTextEditor {
       underlineBtn.classList.toggle('active', document.queryCommandState('underline'));
     }
   }
-
-  toggleMarkdownMode() {
-    const toolbar = this.editor.previousElementSibling;
-    const markdownBtn = toolbar?.querySelector('[data-action="toggleMarkdown"]');
-    
-    if (!marked) {
-      alert('Markdown 功能需要安装依赖。请先运行: npm install');
-      return;
-    }
-
-    if (this.isMarkdownMode) {
-      this.editor.contentEditable = 'true';
-      this.editor.innerHTML = this.markdownSource;
-      this.isMarkdownMode = false;
-      if (markdownBtn) markdownBtn.classList.remove('active');
-      
-      const toolbarControls = toolbar?.querySelectorAll('.font-size-select, .toolbar-btn:not(.markdown-btn), .color-picker-wrapper');
-      toolbarControls?.forEach(ctrl => {
-        ctrl.style.display = '';
-      });
-    } else {
-      this.markdownSource = this.editor.innerHTML;
-      const plainText = this.htmlToMarkdown(this.markdownSource);
-      
-      try {
-        const renderedHtml = marked(plainText);
-        this.editor.innerHTML = renderedHtml;
-        this.editor.contentEditable = 'false';
-        this.isMarkdownMode = true;
-        if (markdownBtn) markdownBtn.classList.add('active');
-        
-        const toolbarControls = toolbar?.querySelectorAll('.font-size-select, .toolbar-btn:not(.markdown-btn), .color-picker-wrapper');
-        toolbarControls?.forEach(ctrl => {
-          ctrl.style.display = 'none';
-        });
-      } catch (e) {
-        console.error('Markdown 渲染失败:', e);
-        alert('Markdown 渲染失败: ' + e.message);
-      }
-    }
-  }
-
-  htmlToMarkdown(html) {
-    let text = html;
-    
-    text = text.replace(/<br\s*\/?>/gi, '\n');
-    text = text.replace(/<p[^>]*>/gi, '\n');
-    text = text.replace(/<\/p>/gi, '');
-    text = text.replace(/<strong[^>]*>(.*?)<\/strong>/gi, '**$1**');
-    text = text.replace(/<b[^>]*>(.*?)<\/b>/gi, '**$1**');
-    text = text.replace(/<em[^>]*>(.*?)<\/em>/gi, '*$1*');
-    text = text.replace(/<i[^>]*>(.*?)<\/i>/gi, '*$1*');
-    text = text.replace(/<u[^>]*>(.*?)<\/u>/gi, '__$1__');
-    text = text.replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n');
-    text = text.replace(/<h2[^>]*>(.*?)<\/h2>/gi, '## $1\n');
-    text = text.replace(/<h3[^>]*>(.*?)<\/h3>/gi, '### $1\n');
-    text = text.replace(/<h4[^>]*>(.*?)<\/h4>/gi, '#### $1\n');
-    text = text.replace(/<h5[^>]*>(.*?)<\/h5>/gi, '##### $1\n');
-    text = text.replace(/<h6[^>]*>(.*?)<\/h6>/gi, '###### $1\n');
-    text = text.replace(/<li[^>]*>(.*?)<\/li>/gi, '- $1\n');
-    text = text.replace(/<ul[^>]*>/gi, '');
-    text = text.replace(/<\/ul>/gi, '');
-    text = text.replace(/<ol[^>]*>/gi, '');
-    text = text.replace(/<\/ol>/gi, '');
-    text = text.replace(/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi, '[$2]($1)');
-    text = text.replace(/<img[^>]*src="([^"]*)"[^>]*alt="([^"]*)"[^>]*>/gi, '![$2]($1)');
-    text = text.replace(/<[^>]+>/g, '');
-    text = text.replace(/&nbsp;/g, ' ');
-    text = text.replace(/&lt;/g, '<');
-    text = text.replace(/&gt;/g, '>');
-    text = text.replace(/&amp;/g, '&');
-    text = text.replace(/\n{3,}/g, '\n\n');
-    
-    return text.trim();
-  }
-
-  getContent() {
-    if (this.isMarkdownMode) {
-      return this.markdownSource;
-    }
-    return this.editor.innerHTML;
-  }
-
-  setContent(content) {
-    this.markdownSource = '';
-    this.isMarkdownMode = false;
-    this.editor.innerHTML = content || '';
-    
-    const toolbar = this.editor.previousElementSibling;
-    const markdownBtn = toolbar?.querySelector('[data-action="toggleMarkdown"]');
-    if (markdownBtn) markdownBtn.classList.remove('active');
-    
-    const toolbarControls = toolbar?.querySelectorAll('.font-size-select, .toolbar-btn:not(.markdown-btn), .color-picker-wrapper');
-    toolbarControls?.forEach(ctrl => {
-      ctrl.style.display = '';
-    });
-  }
 }
 
-class NoteBookApp {
-  constructor() {
-    this.pages = [];
-    this.currentPageIndex = 0;
-    this.saveTimeout = null;
-    this.isSaving = false;
-    this.editors = {};
+class ToolbarController {
+  constructor(editorManager) {
+    this.editorManager = editorManager;
     this.init();
   }
 
   init() {
-    this.initEditors();
-    this.loadData();
-    this.setupEventListeners();
-    this.setupAutoSave();
-    this.setupDatePicker();
+    this.setupFontSizeSelect();
+    this.setupCommandButtons();
+    this.setupColorPickers();
     this.setupKeyboardShortcuts();
   }
 
-  initEditors() {
-    this.editors = {
-      leftEditor: new RichTextEditor('leftEditor'),
-      cuesEditor: new RichTextEditor('cuesEditor'),
-      notesEditor: new RichTextEditor('notesEditor'),
-      summaryEditor: new RichTextEditor('summaryEditor')
-    };
+  setupFontSizeSelect() {
+    const fontSizeSelect = document.getElementById('fontSizeSelect');
+    if (fontSizeSelect) {
+      fontSizeSelect.addEventListener('change', (e) => {
+        this.editorManager.executeCommand('fontSize', e.target.value);
+      });
+    }
+  }
+
+  setupCommandButtons() {
+    const buttonIds = ['boldBtn', 'italicBtn', 'underlineBtn'];
+    buttonIds.forEach(btnId => {
+      const btn = document.getElementById(btnId);
+      if (btn) {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const command = btn.getAttribute('data-command');
+          if (command) {
+            this.editorManager.executeCommand(command);
+          }
+        });
+      }
+    });
+  }
+
+  setupColorPickers() {
+    const textColorPicker = document.getElementById('textColorPicker');
+    const bgColorPicker = document.getElementById('bgColorPicker');
+
+    if (textColorPicker) {
+      textColorPicker.addEventListener('input', (e) => {
+        this.editorManager.executeCommand('foreColor', e.target.value);
+      });
+    }
+
+    if (bgColorPicker) {
+      bgColorPicker.addEventListener('input', (e) => {
+        this.editorManager.executeCommand('backColor', e.target.value);
+      });
+    }
   }
 
   setupKeyboardShortcuts() {
@@ -252,7 +308,7 @@ class NoteBookApp {
         }
 
         const editorId = activeElement.id;
-        const editor = this.editors[editorId];
+        const editor = this.editorManager.editors[editorId];
         
         if (!editor || editor.isMarkdownMode) {
           return;
@@ -260,19 +316,37 @@ class NoteBookApp {
 
         if (e.key === 'b' || e.key === 'B') {
           e.preventDefault();
-          editor.executeCommand('bold');
-          editor.updateToolbarState();
+          this.editorManager.executeCommand('bold');
         } else if (e.key === 'i' || e.key === 'I') {
           e.preventDefault();
-          editor.executeCommand('italic');
-          editor.updateToolbarState();
+          this.editorManager.executeCommand('italic');
         } else if (e.key === 'u' || e.key === 'U') {
           e.preventDefault();
-          editor.executeCommand('underline');
-          editor.updateToolbarState();
+          this.editorManager.executeCommand('underline');
         }
       }
     });
+  }
+}
+
+class NoteBookApp {
+  constructor() {
+    this.pages = [];
+    this.currentPageIndex = 0;
+    this.saveTimeout = null;
+    this.isSaving = false;
+    this.editorManager = null;
+    this.toolbarController = null;
+    this.init();
+  }
+
+  init() {
+    this.editorManager = new EditorManager();
+    this.toolbarController = new ToolbarController(this.editorManager);
+    this.loadData();
+    this.setupEventListeners();
+    this.setupAutoSave();
+    this.setupDatePicker();
   }
 
   loadData() {
@@ -528,12 +602,12 @@ class NoteBookApp {
     
     currentPage.title = document.getElementById('leftPageTitle').value || 
                         ('第 ' + (this.currentPageIndex + 1) + ' 页');
-    currentPage.leftContent = this.editors.leftEditor.getContent();
+    currentPage.leftContent = this.editorManager.getContent('leftEditor');
     currentPage.cornell.title = document.getElementById('cornellTitle').value;
     currentPage.cornell.date = document.getElementById('cornellDate').value;
-    currentPage.cornell.cues = this.editors.cuesEditor.getContent();
-    currentPage.cornell.notes = this.editors.notesEditor.getContent();
-    currentPage.cornell.summary = this.editors.summaryEditor.getContent();
+    currentPage.cornell.cues = this.editorManager.getContent('cuesEditor');
+    currentPage.cornell.notes = this.editorManager.getContent('notesEditor');
+    currentPage.cornell.summary = this.editorManager.getContent('summaryEditor');
   }
 
   renderCurrentPage() {
@@ -542,12 +616,12 @@ class NoteBookApp {
     const page = this.pages[this.currentPageIndex];
     
     document.getElementById('leftPageTitle').value = page.title;
-    this.editors.leftEditor.setContent(page.leftContent || '');
+    this.editorManager.setContent('leftEditor', page.leftContent || '');
     document.getElementById('cornellTitle').value = page.cornell.title || '';
     document.getElementById('cornellDate').value = page.cornell.date || '';
-    this.editors.cuesEditor.setContent(page.cornell.cues || '');
-    this.editors.notesEditor.setContent(page.cornell.notes || '');
-    this.editors.summaryEditor.setContent(page.cornell.summary || '');
+    this.editorManager.setContent('cuesEditor', page.cornell.cues || '');
+    this.editorManager.setContent('notesEditor', page.cornell.notes || '');
+    this.editorManager.setContent('summaryEditor', page.cornell.summary || '');
     
     document.getElementById('currentPageDisplay').textContent = 
       '第 ' + (this.currentPageIndex + 1) + ' 页 / 共 ' + this.pages.length + ' 页';
@@ -557,6 +631,12 @@ class NoteBookApp {
     
     document.getElementById('prevPageBtn').disabled = this.currentPageIndex === 0;
     document.getElementById('nextPageBtn').disabled = this.currentPageIndex >= this.pages.length - 1;
+
+    const markdownToggle = document.getElementById('markdownModeToggle');
+    if (markdownToggle && markdownToggle.checked) {
+      this.editorManager.globalMarkdownMode = true;
+      this.editorManager.updateAllEditorsMarkdownMode();
+    }
   }
 
   renderTOC() {
